@@ -10,7 +10,7 @@ class Option:
     lr: float = 1e-3
     batch_sz: int = 4
     clip: float = 1.0
-    max_itr: int = None
+    max_itr: int = 500
     loss_update_itr: int = 20
 
     # Model
@@ -25,6 +25,6 @@ class Option:
     kernel_size: int = 2
     bias: bool = False
 
-    dataset_path: str = "second/wavenet_dataset.npz"
+    dataset_path: str = "wavenet_dataset.npz"
     ckpt_path: str = ""
     ckpt_dir: str = "ckpt"
