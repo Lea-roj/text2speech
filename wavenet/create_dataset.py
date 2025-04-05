@@ -48,8 +48,8 @@ def create_dataset(dataset_path, files, sr=11025, bit_depth=8):
                 plt.grid(True)
 
                 plt.tight_layout()
-                os.makedirs("figures", exist_ok=True)
-                plot_path = "figures/mu_law_roundtrip_comparison.png"
+                os.makedirs("results/figures", exist_ok=True)
+                plot_path = "results/figures/mu_law_roundtrip_comparison.png"
                 plt.savefig(plot_path, dpi=300)
                 print(f"Saved mu-law roundtrip comparison figure to {plot_path}")
 
