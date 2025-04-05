@@ -6,3 +6,8 @@
 /audio/*
 
 *.npz
+
+/ckpt/*
+
+*.wav
+*.xml
