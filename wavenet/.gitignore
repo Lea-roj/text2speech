@@ -6,3 +6,5 @@
 /audio/*
 
 *.npz
+wavenet/wavenet_dataset.npz
+
