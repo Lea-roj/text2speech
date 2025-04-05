@@ -8,3 +8,7 @@
 *.npz
 wavenet/wavenet_dataset.npz
 
+/ckpt/*
+
+*.wav
+*.xml
