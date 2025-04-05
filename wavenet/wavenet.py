@@ -23,6 +23,21 @@ class GatedActivationUnit(nn.Module):
         return torch.tanh(x) * torch.sigmoid(x)
 
 
+class ResidualBlock(nn.Module):
+    def __init__(self, res_dim, dil_dim, skip_dim, kernel_size, dilation, bias=False):
+        super().__init__()
+        self.causal = CausalConv1d(res_dim, dil_dim, kernel_size, dilation)
+        self.gate = GatedActivationUnit()
+        self.res_proj = nn.Conv1d(dil_dim, res_dim, 1, bias=bias)
+        self.skip_proj = nn.Conv1d(dil_dim, skip_dim, 1, bias=bias)
+
+    def forward(self, x):
+        gated = self.gate(self.causal(x))
+        res = self.res_proj(gated)
+        skip = self.skip_proj(gated)
+        return x + res, skip
+
+
 class WaveNet(nn.Module):
     def __init__(self, num_block=4, num_layer=10, class_dim=256, residual_dim=32, dilation_dim=128, skip_dim=256,
                  kernel_size=2, bias=False):
@@ -35,30 +50,31 @@ class WaveNet(nn.Module):
             dilation = 1
             for _ in range(num_layer):
                 self.stack.append(
-                    nn.Sequential(
-                        CausalConv1d(in_channels=residual_dim, out_channels=dilation_dim,
-                                     kernel_size=kernel_size, dilation=dilation
-                                     ),
-                        GatedActivationUnit(),
-                        nn.Conv1d(in_channels=dilation_dim, out_channels=residual_dim, kernel_size=1, bias=bias)
+                    ResidualBlock(
+                        res_dim=residual_dim,
+                        dil_dim=dilation_dim,
+                        skip_dim=skip_dim,
+                        kernel_size=kernel_size,
+                        dilation=dilation,
+                        bias=bias
                     )
                 )
                 dilation *= 2
 
         self.end_conv = nn.Sequential(
             nn.ReLU(),
-            nn.Conv1d(in_channels=residual_dim, out_channels=skip_dim, kernel_size=1, bias=bias),
+            nn.Conv1d(in_channels=skip_dim, out_channels=skip_dim, kernel_size=1, bias=bias),
             nn.ReLU(),
             nn.Conv1d(in_channels=skip_dim, out_channels=class_dim, kernel_size=1, bias=bias)
         )
 
     def forward(self, x):
         residual = self.start_conv(x)
-        skips = torch.zeros_like(residual)
+        skips = 0
 
-        for layer in self.stack:
-            skip = layer(residual)
-            residual = residual + skip
-            skips = skips + skip
+        for block in self.stack:
+            residual, skip = block(residual)
+            skips = skips + skip if isinstance(skips, torch.Tensor) else skip
+
         logits = self.end_conv(skips)
         return logits
