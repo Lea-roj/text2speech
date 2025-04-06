@@ -80,10 +80,9 @@ def generate_audio(model, audio_num, audio_len, num_class, receptive_field=1024,
 
 def save_audio_batch(audio_batch, sample_rate=11025, prefix="output"):
     for i, audio in enumerate(audio_batch):
-        # Ensure float32 and normalize range
         audio = np.asarray(audio, dtype=np.float32)
-        audio = np.clip(audio, -1.0, 1.0)              # avoid overflow
-        audio = (audio * 32767).astype(np.int16)       # convert to 16-bit PCM
+        audio = np.clip(audio, -1.0, 1.0)
+        audio = (audio * 32767).astype(np.int16)
 
         path = f"{prefix}_{i}.wav"
         write(path, sample_rate, audio)
