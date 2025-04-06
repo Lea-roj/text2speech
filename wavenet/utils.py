@@ -43,6 +43,7 @@ def save_checkpoint(path, model, optimizer, misc):
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'losses': misc.get('losses', []),
+        'config': misc.get('config', None)
     }, path)
 
 
@@ -74,11 +75,16 @@ def generate_audio(model, audio_num, audio_len, num_class, receptive_field=1024,
 
     # Optional: clip to safe range
     output = np.clip(output, -1.0, 1.0)
-    return output
+    return [output]
 
 
 def save_audio_batch(audio_batch, sample_rate=11025, prefix="output"):
     for i, audio in enumerate(audio_batch):
+        # Ensure float32 and normalize range
+        audio = np.asarray(audio, dtype=np.float32)
+        audio = np.clip(audio, -1.0, 1.0)              # avoid overflow
+        audio = (audio * 32767).astype(np.int16)       # convert to 16-bit PCM
+
         path = f"{prefix}_{i}.wav"
         write(path, sample_rate, audio)
-        print(f"Saved: {path}")
+        print(f"Saved: {path} ({len(audio) / sample_rate:.2f} sec)")

@@ -1,6 +1,8 @@
 import os
+import glob
 import torch
 import matplotlib.pyplot as plt
+
 from wavenet import WaveNet
 from utils import generate_audio, save_audio_batch
 from config import Option
@@ -8,11 +10,18 @@ from config import Option
 if __name__ == "__main__":
     opt = Option()
     opt.DEVICE = "cpu"
-    checkpoint_path = os.path.join(opt.ckpt_dir, "8.pt")
-    if not os.path.exists(checkpoint_path):
-        raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
+
+    ckpt_files = sorted(glob.glob(os.path.join(opt.ckpt_dir, "*.pt")))
+    if not ckpt_files:
+        raise FileNotFoundError(f"No checkpoints found in {opt.ckpt_dir}")
+    checkpoint_path = ckpt_files[-1]
 
     print(f"Loading model from: {checkpoint_path}")
+    checkpoint = torch.load(checkpoint_path, map_location=opt.DEVICE)
+
+    if "config" in checkpoint:
+        opt.__dict__.update(checkpoint["config"])
+
     model = WaveNet(
         num_block=opt.num_block,
         num_layer=opt.num_layer,
@@ -23,8 +32,7 @@ if __name__ == "__main__":
         kernel_size=opt.kernel_size,
         bias=opt.bias
     )
-
-    model.load_state_dict(torch.load(checkpoint_path, map_location=opt.DEVICE)["model_state_dict"])
+    model.load_state_dict(checkpoint["model_state_dict"])
     model.to(opt.DEVICE)
     model.eval()
 
@@ -34,12 +42,18 @@ if __name__ == "__main__":
         audio_num=1,
         audio_len=110250,       # samples
         num_class=opt.num_class,
-        receptive_field=opt.src_len
+        receptive_field=opt.src_len,
+        temperature=0.9
     )
 
     save_audio_batch(generated_audio, sample_rate=11025, prefix="gen_audio")
 
+    plt.figure(figsize=(10, 3))
     plt.title("Generated Audio Waveform")
     plt.plot(generated_audio[0])
+    plt.xlabel("Sample")
+    plt.ylabel("Amplitude")
+    plt.grid(True)
+    plt.tight_layout()
     plt.savefig("generated_waveform.png")
     plt.show()

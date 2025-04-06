@@ -19,7 +19,7 @@ class Option:
     tgt_len: int = 64
     num_block: int = 4
     num_layer: int = 10
-    residual_dim: int = 128
+    residual_dim: int = 32
     dilation_dim: int = 128
     skip_dim: int = 256
     kernel_size: int = 2

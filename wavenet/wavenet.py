@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 
+from config import Option
+
+opt = Option()
+
 
 class CausalConv1d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation=1, **kwargs):
@@ -39,8 +43,15 @@ class ResidualBlock(nn.Module):
 
 
 class WaveNet(nn.Module):
-    def __init__(self, num_block=4, num_layer=10, class_dim=256, residual_dim=32, dilation_dim=128, skip_dim=256,
-                 kernel_size=2, bias=False):
+    def __init__(self, num_block=opt.num_block,
+                 num_layer=opt.num_layer,
+                 class_dim=opt.num_class,
+                 residual_dim=opt.residual_dim,
+                 dilation_dim=opt.dilation_dim,
+                 skip_dim=opt.skip_dim,
+                 kernel_size=opt.kernel_size,
+                 bias=opt.bias
+                 ):
         super(WaveNet, self).__init__()
 
         self.start_conv = nn.Conv1d(in_channels=class_dim, out_channels=residual_dim, kernel_size=1, bias=bias)
